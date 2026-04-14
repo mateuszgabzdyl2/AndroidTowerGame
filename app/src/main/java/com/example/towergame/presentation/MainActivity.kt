@@ -31,7 +31,9 @@ class MainActivity : ComponentActivity() {
                     })
                 }
                 composable("lobby") {
-                    LobbyScreen()
+                    LobbyScreen(onClick = {
+                        navController.navigate(it)
+                    })
                 }
             }
         }

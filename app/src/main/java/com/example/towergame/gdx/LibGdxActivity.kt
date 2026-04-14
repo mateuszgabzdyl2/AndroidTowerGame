@@ -18,6 +18,10 @@ class LibGdxActivity : AndroidApplication() {
             useCompass = false
         }
 
-        initialize(MyGame(), config)
+        initialize(MyGame(onGameOver =  {
+            runOnUiThread {
+                finish()
+            }
+        }), config)
     }
 }
