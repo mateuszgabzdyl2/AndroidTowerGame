@@ -7,8 +7,10 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
@@ -23,6 +25,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.example.towergame.constants.Constants
 import com.example.towergame.gdx.MyGame
 import com.example.towergame.viewmodel.VM
+import kotlin.math.floor
 
 class GameScreen(
     private val game: MyGame,
@@ -41,6 +44,16 @@ class GameScreen(
     private lateinit var pauseOverlay: PauseOverlay
     private lateinit var gameOverOverlay: GameOverOverlay
     private var isGameOverHandled = false
+
+    // background
+    private var background = BackgroundRenderer()
+    private val sideWalls = SideWallsRenderer(viewportWidth = staticViewport.worldWidth, viewportHeight = staticViewport.worldHeight)
+
+    private lateinit var animator: PlayerAnimator
+
+    private val leftTex   = Texture("platforms/tileYellow_1.png")
+    private val midTex    = Texture("platforms/tileYellow_2.png")
+    private val rightTex  = Texture("platforms/tileYellow_3.png")
 
     override fun show() {
         staticCamera.position.set(Constants.WORLD_WIDTH / 2f, Constants.WORLD_HEIGHT / 2f, 0f)
@@ -61,6 +74,9 @@ class GameScreen(
             onRestart = { game.setScreen(GameScreen(game, onActivityFinish)) },
             onMenu = { onActivityFinish() }
         )
+
+        val playerAssets = PlayerAssets()
+        animator = PlayerAnimator(playerAssets)
 
         Gdx.input.inputProcessor = uiStage
     }
@@ -85,33 +101,30 @@ class GameScreen(
 
         // draw scrolling world
         gameViewport.apply()
-        shapeRenderer.projectionMatrix = gameCamera.combined
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        game.batch.projectionMatrix = gameCamera.combined
+        background.render(game.batch, gameCamera.position.y)
 
         // draw platforms
-        shapeRenderer.color = Color.LIGHT_GRAY
-        for(plat in vm.getPlatformRects()) {
-            shapeRenderer.rect(plat.x, plat.y, plat.width, plat.height)
-        }
+        drawPlatforms(game.batch, vm.getPlatformRects())
 
         // draw players
-        shapeRenderer.color = Color.ORANGE
-        for(player in vm.getPlayerRects()) {
-            shapeRenderer.rect(player.x, player.y, player.width, player.height)
-        }
+        animator.update(delta)
+        val frame = animator.getFrame(vm.getState())
 
-        shapeRenderer.end()
+        val player: Rectangle = vm.getPlayerRects()[0]
+        game.batch.begin()
+        game.batch.draw(
+            frame,
+            player.x,
+            player.y,
+            player.width,
+            player.height
+        )
+        game.batch.end()
 
         staticViewport.apply()
-        shapeRenderer.projectionMatrix = staticCamera.combined
-
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-
-//        shapeRenderer.color = Color.DARK_GRAY
-//        shapeRenderer.rect(0f, 0f, Constants.WALL_WIDTH, Constants.WORLD_HEIGHT)
-//        shapeRenderer.rect(Constants.WORLD_WIDTH - Constants.WALL_WIDTH, 0f, Constants.WALL_WIDTH, Constants.WORLD_HEIGHT)
-
-        shapeRenderer.end()
+        game.batch.projectionMatrix = staticCamera.combined
+        sideWalls.render(game.batch, gameCamera.position.y)
 
         // score
         game.batch.projectionMatrix = staticCamera.combined
@@ -131,6 +144,49 @@ class GameScreen(
         uiStage.draw()
     }
 
+    fun drawPlatforms(
+        batch: SpriteBatch,
+        platforms: List<Rectangle>
+    ) {
+        val tileSize = Constants.PLATFORM_HEIGHT
+
+        batch.begin()
+
+        for(p in platforms) {
+
+            val segments = kotlin.math.round(p.width / tileSize).toInt()
+            if(segments < 2) continue
+
+            val xStart = p.x
+            val y = p.y
+
+            // left tile
+            batch.draw(leftTex, xStart, y, tileSize, tileSize)
+
+            // middle tiles
+            for(i in 1 until segments - 1) {
+                batch.draw(
+                    midTex,
+                    xStart + i * tileSize,
+                    y,
+                    tileSize,
+                    tileSize
+                )
+            }
+
+            // right tile
+            batch.draw(
+                rightTex,
+                xStart + (segments - 1) * tileSize,
+                y,
+                tileSize,
+                tileSize
+            )
+        }
+
+        batch.end()
+    }
+
     override fun resize(width: Int, height: Int) {
         gameViewport.update(width, height, true)
         staticViewport.update(width, height, true)
@@ -146,6 +202,8 @@ class GameScreen(
     override fun hide() {}
 
     override fun dispose() {
+        background.dispose()
+        sideWalls.dispose()
         shapeRenderer.dispose()
         font.dispose()
 

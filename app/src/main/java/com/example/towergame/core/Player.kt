@@ -3,6 +3,7 @@ package com.example.towergame.core
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector2
 import com.example.towergame.communication.Move
+import com.example.towergame.communication.State
 import com.example.towergame.constants.Constants
 import kotlin.math.abs
 
@@ -36,6 +37,18 @@ class Player(
             Move.LEFT -> moveLeftState = state
             Move.RIGHT -> moveRightState = state
             Move.JUMP -> jumpState = state
+        }
+    }
+
+    fun getState(): State {
+        if(isGrounded) {
+            if(moveLeftState) return State.LEFT_GROUND
+            if(moveRightState) return State.RIGHT_GROUND
+            return State.IDLE
+        }
+        else {
+            if(velocity.y > 0) return State.JUMP
+            return State.FALL
         }
     }
     fun update(delta: Float) {

@@ -2,6 +2,7 @@ package com.example.towergame.viewmodel
 
 import com.badlogic.gdx.math.Rectangle
 import com.example.towergame.communication.Move
+import com.example.towergame.communication.State
 import com.example.towergame.core.World
 
 class VM {
@@ -27,6 +28,10 @@ class VM {
 
     fun setMove(move: Move, state: Boolean) {
         world.setMove(move, state)
+    }
+
+    fun getState(): State {
+        return world.getState()
     }
 
     fun update(time: Float) {

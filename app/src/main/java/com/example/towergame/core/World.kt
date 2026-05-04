@@ -1,10 +1,11 @@
 package com.example.towergame.core
 
 import com.example.towergame.communication.Move
+import com.example.towergame.communication.State
 import com.example.towergame.constants.Constants
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.random.Random
-
 
 class World {
     val platforms = mutableListOf<Platform>()
@@ -12,16 +13,20 @@ class World {
     val camera = Camera(Constants.WORLD_HEIGHT / 2)
 
     init {
-        platforms.add(Platform(0, 200f, 400f))
+        platforms.add(Platform(0, Constants.WORLD_WIDTH / 2, ceil(Constants.WORLD_WIDTH / Constants.PLATFORM_HEIGHT.toDouble()).toInt()))
         for(i in 1..100) {
             platforms.add(generatePlatform(i))
         }
 
-        players.add(Player(200f, 35f))
+        players.add(Player(Constants.WORLD_WIDTH / 2, 35f))
     }
 
     fun setMove(move: Move, state: Boolean) {
         players[0].setMove(move, state)
+    }
+
+    fun getState(): State {
+        return players[0].getState()
     }
     fun update(time: Float) {
         for(player in players) {
@@ -62,18 +67,18 @@ class World {
         val stage = level / 10
 
         val (minWidth, maxWidth) = when (stage) {
-            0 -> 160f to 200f   // levels 1–10
-            1 -> 120f to 170f   // 11–20
-            2 -> 90f to 140f    // 21–30
-            else -> 60f to 100f //
+            0 -> 11 to 14
+            1 -> 9 to 12
+            2 -> 7 to 10
+            else -> 5 to 8
         }
 
-        val width = Random.nextFloat() * (maxWidth - minWidth) + minWidth
+        // int width
+        val width = Random.nextInt(minWidth, maxWidth + 1)
 
-        val x = Random.nextFloat() * (Constants.WORLD_WIDTH - width) + width / 2f
+        val x = Random.nextFloat() * (Constants.WORLD_WIDTH - width * Constants.PLATFORM_HEIGHT) + width * Constants.PLATFORM_HEIGHT / 2f
 
         return Platform(level, x, width)
-
     }
 
     fun isGameOver(): Boolean {
