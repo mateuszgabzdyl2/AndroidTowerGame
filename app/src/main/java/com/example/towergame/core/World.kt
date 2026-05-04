@@ -34,17 +34,24 @@ class World {
                     continue
                 }
 
-                if (player.rect.overlaps(plat.rect)) {
+                if(player.rect.overlaps(plat.rect)) {
                     player.resolveCollision(plat.rect)
                 }
             }
         }
 
-        camera.update(time, players[0].rect.y)
-
-//        if(isGameOver()) {
-//            println("GAME OVER")
+//        for(i in platforms.indices) {
+//            for(j in i + 1 until platforms.size) {
+//                val p1 = players[i]
+//                val p2 = players[j]
+//
+//                if(p1.rect.overlaps(p2.rect)) {
+//
+//                }
+//            }
 //        }
+
+        camera.update(time, players[0].rect.y)
     }
 
     fun getCameraPosition(): Float {

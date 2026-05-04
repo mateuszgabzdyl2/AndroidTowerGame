@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun MenuScreen(onClick: (String) -> Unit) {
+fun MenuScreen(onClick: (String) -> Unit, onStartGame: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -33,24 +33,45 @@ fun MenuScreen(onClick: (String) -> Unit) {
             )
 
             Button(
-                onClick = { onClick("settings") },
+                onClick = onStartGame,
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
                     .height(60.dp)
             ) {
-                Text("Settings")
+                Text("Singleplayer")
             }
 
             Button(
                 onClick = {
-                    println("Lobby button clicked")
                     onClick("lobby")
                 },
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
                     .height(60.dp)
             ) {
-                Text("Lobby")
+                Text("Multiplayer")
+            }
+
+            Button(
+                onClick = {
+                    onClick("statistics")
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .height(60.dp)
+            ) {
+                Text("Statistics")
+            }
+
+            Button(
+                onClick = {
+                    onClick("settings")
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .height(60.dp)
+            ) {
+                Text("Settings")
             }
         }
     }

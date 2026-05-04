@@ -1,22 +1,32 @@
 package com.example.towergame.gdx.gamescreen
 
+import android.content.IntentSender
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.math.Rectangle
+import com.badlogic.gdx.scenes.scene2d.Actor
+import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
+import com.badlogic.gdx.scenes.scene2d.ui.Skin
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton
+import com.badlogic.gdx.scenes.scene2d.ui.Window
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.viewport.FitViewport
+import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.example.towergame.constants.Constants
 import com.example.towergame.gdx.MyGame
 import com.example.towergame.viewmodel.VM
 
 class GameScreen(
     private val game: MyGame,
-    private val onGameOver: () -> Unit
+    private val onActivityFinish: () -> Unit
 ) : Screen {
     private val vm: VM = VM()
     private val playerView: PlayerView = PlayerView(vm)
@@ -25,10 +35,12 @@ class GameScreen(
     private val gameViewport = FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, gameCamera)
 
     private val staticCamera = OrthographicCamera()
-    private val staticViewport = FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, staticCamera)
-    private var started = false
+    private val staticViewport = ScreenViewport(staticCamera)
     private val font = BitmapFont()
-
+    private val uiStage = Stage(staticViewport)
+    private lateinit var pauseOverlay: PauseOverlay
+    private lateinit var gameOverOverlay: GameOverOverlay
+    private var isGameOverHandled = false
 
     override fun show() {
         staticCamera.position.set(Constants.WORLD_WIDTH / 2f, Constants.WORLD_HEIGHT / 2f, 0f)
@@ -36,16 +48,33 @@ class GameScreen(
         gameCamera.position.set(Constants.WORLD_WIDTH / 2f, Constants.WORLD_HEIGHT / 2f, 0f)
         gameCamera.update()
         font.data.setScale(2.5f)
+
+        pauseOverlay = PauseOverlay(
+            stage = uiStage,
+            onResume = {  },
+            onRestart = { game.setScreen(GameScreen(game, onActivityFinish)) },
+            onMenu = { onActivityFinish() }
+        )
+
+        gameOverOverlay = GameOverOverlay(
+            stage = uiStage,
+            onRestart = { game.setScreen(GameScreen(game, onActivityFinish)) },
+            onMenu = { onActivityFinish() }
+        )
+
+        Gdx.input.inputProcessor = uiStage
     }
 
     override fun render(delta: Float) {
-        if(!started) {
-            if(Gdx.input.isKeyPressed(Input.Keys.A)) {
-                started = true
-            }
+        if(pauseOverlay.isPaused || gameOverOverlay.isVisible) {
+            shapeRenderer.projectionMatrix = staticCamera.combined
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+            shapeRenderer.color = Color(0f, 0f, 0f, 0.5f)
+            shapeRenderer.rect(0f, 0f, staticViewport.worldWidth, staticViewport.worldHeight)
+            shapeRenderer.end()
         }
 
-        if(started) {
+        if(!pauseOverlay.isPaused && !gameOverOverlay.isVisible) {
             vm.update(delta)
             playerView.update()
             gameCamera.position.y = vm.getCameraPosition()
@@ -78,28 +107,36 @@ class GameScreen(
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
 
-        shapeRenderer.color = Color.DARK_GRAY
-        shapeRenderer.rect(0f, 0f, Constants.WALL_WIDTH, Constants.WORLD_HEIGHT)
-        shapeRenderer.rect(Constants.WORLD_WIDTH - Constants.WALL_WIDTH, 0f, Constants.WALL_WIDTH, Constants.WORLD_HEIGHT)
+//        shapeRenderer.color = Color.DARK_GRAY
+//        shapeRenderer.rect(0f, 0f, Constants.WALL_WIDTH, Constants.WORLD_HEIGHT)
+//        shapeRenderer.rect(Constants.WORLD_WIDTH - Constants.WALL_WIDTH, 0f, Constants.WALL_WIDTH, Constants.WORLD_HEIGHT)
 
         shapeRenderer.end()
 
-        if(vm.isGameOver()) {
-            onGameOver()
-        }
-
         // score
         game.batch.projectionMatrix = staticCamera.combined
-
         game.batch.begin()
+
         font.color = Color.WHITE
         font.draw(game.batch, "Score: ${vm.getScore()}", 0f, Constants.WORLD_HEIGHT - 20f)
+
         game.batch.end()
+
+        if(vm.isGameOver() && !isGameOverHandled) {
+            gameOverOverlay.show(vm.getScore())
+            isGameOverHandled = true
+        }
+
+        uiStage.act(delta)
+        uiStage.draw()
     }
 
     override fun resize(width: Int, height: Int) {
         gameViewport.update(width, height, true)
         staticViewport.update(width, height, true)
+
+        pauseOverlay.resize()
+        gameOverOverlay.resize()
     }
 
     override fun pause() {}
@@ -110,7 +147,10 @@ class GameScreen(
 
     override fun dispose() {
         shapeRenderer.dispose()
-        game.batch.dispose()
         font.dispose()
+
+        pauseOverlay.dispose()
+        gameOverOverlay.dispose()
+        uiStage.dispose()
     }
 }

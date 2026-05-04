@@ -1,9 +1,11 @@
 package com.example.towergame.gdx
 
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import com.badlogic.gdx.backends.android.AndroidApplication
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration
+import com.example.towergame.presentation.MainActivity
 
 class LibGdxActivity : AndroidApplication() {
 
@@ -18,8 +20,12 @@ class LibGdxActivity : AndroidApplication() {
             useCompass = false
         }
 
-        initialize(MyGame(onGameOver =  {
+        initialize(MyGame(onActivityFinish = {
             runOnUiThread {
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                }
+                startActivity(intent)
                 finish()
             }
         }), config)

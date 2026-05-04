@@ -10,10 +10,12 @@ class Camera (
 
     private fun getAutoScrollSpeed(level: Int): Float {
         return when (level / 10) {
-            0 -> 20f      // 1–10
-            1 -> 34f      // 11–20
-            2 -> 48f      // 21–30
-            else -> 72f   //
+            0 -> 40f      // 1–10
+            1 -> 70f      // 11–20
+            2 -> 100f      // 21–30
+            3 -> 110f      // 31-40
+            4 -> 120f      // 41-50
+            else -> 130f   //
         }
     }
     fun update(time: Float, playerY: Float) {

@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun LobbyScreen(onClick: (String) -> Unit, onStartGame: () -> Unit) {
+fun StatisticsScreen(onClick: (String) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -27,21 +27,9 @@ fun LobbyScreen(onClick: (String) -> Unit, onStartGame: () -> Unit) {
         ) {
 
             Text(
-                text = "Lobby",
+                text = "Statistics",
                 style = MaterialTheme.typography.headlineLarge
             )
-
-            Button(
-                onClick = onStartGame,
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(60.dp)
-            ) {
-                Text(
-                    text = "Start Game",
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
 
             Button(
                 onClick = { onClick("menu") },

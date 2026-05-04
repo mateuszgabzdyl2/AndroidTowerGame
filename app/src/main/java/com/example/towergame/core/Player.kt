@@ -14,7 +14,7 @@ class Player(
     val velocity = Vector2(0f, 0f)
 
     // constants
-    private val gravity = -1000f
+    private val gravity = 1000f
     private val acceleration = 500f
     private val friction = 0.4f
     private val maxSpeed = 300f
@@ -40,7 +40,7 @@ class Player(
     }
     fun update(delta: Float) {
         previousY = rect.y
-        val currentAccel = if (isGrounded) acceleration else acceleration * 0.6f
+        val currentAccel = if(isGrounded) acceleration else acceleration * 0.6f
 
         if(moveLeftState) {
             velocity.x -= currentAccel * delta
@@ -59,12 +59,12 @@ class Player(
         }
 
         // speed cap
-        if (velocity.x > maxSpeed) velocity.x = maxSpeed
-        if (velocity.x < -maxSpeed) velocity.x = -maxSpeed
+        if(velocity.x > maxSpeed) velocity.x = maxSpeed
+        if(velocity.x < -maxSpeed) velocity.x = -maxSpeed
 
         // gravity
         if(!isGrounded) {
-            velocity.y += gravity * delta
+            velocity.y -= gravity * delta
         }
 
         if(isGrounded && jumpState) {
@@ -76,20 +76,19 @@ class Player(
         rect.y += velocity.y * delta
 
         // check walls
-        if (rect.x < Constants.WALL_WIDTH) {
-            rect.x = Constants.WALL_WIDTH
-            if  (velocity.x < 0) {
+        if(rect.x < 0f) {
+            rect.x = 0f
+            if(velocity.x < 0) {
                 velocity.x = -velocity.x * wallBounciness
             }
         }
-        if (rect.x + rect.width > 400f - Constants.WALL_WIDTH) {
-            rect.x = 400f - Constants.WALL_WIDTH - rect.width
+        if(rect.x + rect.width > Constants.WORLD_WIDTH) {
+            rect.x = Constants.WORLD_WIDTH - rect.width
             if(velocity.x > 0) {
                 velocity.x = -velocity.x * wallBounciness
             }
         }
 
-        // invisible platform fix
         if(rect.x + rect.width / 2f !in platformLeftEnd..platformRightEnd) {
             isGrounded = false
         }
@@ -99,7 +98,7 @@ class Player(
     }
 
     fun jump() {
-        val speedBonus = abs(velocity.x) * 0.5f // bonus for fast run
+        val speedBonus = abs(velocity.x) * 0.7f // bonus for fast run
         velocity.y = baseJump + speedBonus
         isGrounded = false
     }
@@ -107,17 +106,10 @@ class Player(
     fun resolveCollision(platformRect: Rectangle) {
         val platformTop = platformRect.y + platformRect.height
 
-//        if (velocity.y < 0 && rect.y + (rect.height / 2) > platformRect.y + platformRect.height) {
-//            rect.y = platformRect.y + platformRect.height
-//            velocity.y = 0f
-//            isGrounded = true
-//        }
-
         if(velocity.y < 0 && previousY >= platformTop) {
             rect.y = platformTop
             velocity.y = 0f
             isGrounded = true
-            // invisible platform fix
             platformLeftEnd = platformRect.x
             platformRightEnd = platformRect.x + platformRect.width
         }

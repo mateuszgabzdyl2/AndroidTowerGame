@@ -1,45 +1,73 @@
 package com.example.towergame.presentation
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.towergame.ui.theme.TowerGameTheme
+import androidx.navigation.navOptions
+import com.example.towergame.gdx.LibGdxActivity
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        enableEdgeToEdge()
+
         setContent {
             val navController = rememberNavController()
+            val context = LocalContext.current
+
             NavHost(navController = navController, startDestination = "menu") {
                 composable("menu") {
                     MenuScreen(onClick = {
                         navController.navigate(it)
+                    }, onStartGame = {
+                        val gameIntent = Intent(context, LibGdxActivity::class.java).apply {
+                            putExtra("GAME_MODE", "SINGLEPLAYER")
+                        }
+                        context.startActivity(gameIntent)
                     })
                 }
                 composable("settings") {
                     SettingsScreen(onClick = {
-                        navController.navigate(it)
+                        navController.navigate(
+                            route = it,
+                            navOptions = navOptions {
+                                popUpTo("menu") { inclusive = true }
+                            }
+                        )
                     })
                 }
                 composable("lobby") {
                     LobbyScreen(onClick = {
-                        navController.navigate(it)
+                        navController.navigate(
+                            route = it,
+                            navOptions = navOptions {
+                                popUpTo("menu") { inclusive = true }
+                            }
+                        )
+                    }, onStartGame = {
+                        val gameIntent = Intent(context, LibGdxActivity::class.java).apply {
+                            putExtra("GAME_MODE", "MULTIPLAYER")
+                        }
+                        context.startActivity(gameIntent)
+                    })
+                }
+                composable("statistics") {
+                    StatisticsScreen(onClick = {
+                        navController.navigate(
+                            route = it,
+                            navOptions = navOptions {
+                                popUpTo("menu") { inclusive = true }
+                            }
+                        )
                     })
                 }
             }
         }
-
-        // test
-        Log.d("LIFECYCLE", "onCreate")
     }
 
     // test
@@ -71,20 +99,5 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d("LIFECYCLE", "onDestroy")
-    }
-}
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TowerGameTheme() {
-        Greeting("Android")
     }
 }
