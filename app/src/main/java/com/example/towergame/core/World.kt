@@ -25,6 +25,18 @@ class World {
         players[0].setMove(move, state)
     }
 
+    fun setHorizontalInput(input: Float) {
+        players[0].setHorizontalInput(input)
+    }
+
+    fun setJump(state: Boolean) {
+        players[0].setJump(state)
+    }
+
+    fun isJumpEvent(): Boolean {
+        return players[0].isJumpEvent()
+    }
+
     fun getState(): State {
         return players[0].getState()
     }
@@ -66,19 +78,18 @@ class World {
     fun generatePlatform(level: Int): Platform {
         val stage = level / 10
 
-        val (minWidth, maxWidth) = when (stage) {
+        val (minSegments, maxSegments) = when (stage) {
             0 -> 11 to 14
             1 -> 9 to 12
             2 -> 7 to 10
             else -> 5 to 8
         }
 
-        // int width
-        val width = Random.nextInt(minWidth, maxWidth + 1)
+        val segments = Random.nextInt(minSegments, maxSegments + 1)
 
-        val x = Random.nextFloat() * (Constants.WORLD_WIDTH - width * Constants.PLATFORM_HEIGHT) + width * Constants.PLATFORM_HEIGHT / 2f
+        val x = Random.nextFloat() * (Constants.WORLD_WIDTH - segments * Constants.PLATFORM_HEIGHT) + segments * Constants.PLATFORM_HEIGHT / 2f
 
-        return Platform(level, x, width)
+        return Platform(level, x, segments)
     }
 
     fun isGameOver(): Boolean {

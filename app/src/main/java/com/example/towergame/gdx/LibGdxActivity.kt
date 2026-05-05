@@ -16,8 +16,7 @@ class LibGdxActivity : AndroidApplication() {
             ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
         val config = AndroidApplicationConfiguration().apply {
-            useAccelerometer = false
-            useCompass = false
+            useAccelerometer = true
         }
 
         initialize(MyGame(onActivityFinish = {

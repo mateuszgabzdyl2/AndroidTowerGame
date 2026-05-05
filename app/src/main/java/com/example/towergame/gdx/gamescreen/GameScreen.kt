@@ -1,6 +1,5 @@
 package com.example.towergame.gdx.gamescreen
 
-import android.content.IntentSender
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
@@ -8,24 +7,16 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Rectangle
-import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
-import com.badlogic.gdx.scenes.scene2d.ui.Skin
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton
-import com.badlogic.gdx.scenes.scene2d.ui.Window
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.badlogic.gdx.utils.viewport.ScreenViewport
+import com.example.towergame.communication.PlatformRenderData
 import com.example.towergame.constants.Constants
 import com.example.towergame.gdx.MyGame
 import com.example.towergame.viewmodel.VM
-import kotlin.math.floor
 
 class GameScreen(
     private val game: MyGame,
@@ -50,10 +41,7 @@ class GameScreen(
     private val sideWalls = SideWallsRenderer(viewportWidth = staticViewport.worldWidth, viewportHeight = staticViewport.worldHeight)
 
     private lateinit var animator: PlayerAnimator
-
-    private val leftTex   = Texture("platforms/tileYellow_1.png")
-    private val midTex    = Texture("platforms/tileYellow_2.png")
-    private val rightTex  = Texture("platforms/tileYellow_3.png")
+    val audio = AudioManager()
 
     override fun show() {
         staticCamera.position.set(Constants.WORLD_WIDTH / 2f, Constants.WORLD_HEIGHT / 2f, 0f)
@@ -78,21 +66,20 @@ class GameScreen(
         val playerAssets = PlayerAssets()
         animator = PlayerAnimator(playerAssets)
 
+        audio.playMusic()
+
         Gdx.input.inputProcessor = uiStage
     }
 
     override fun render(delta: Float) {
-        if(pauseOverlay.isPaused || gameOverOverlay.isVisible) {
-            shapeRenderer.projectionMatrix = staticCamera.combined
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-            shapeRenderer.color = Color(0f, 0f, 0f, 0.5f)
-            shapeRenderer.rect(0f, 0f, staticViewport.worldWidth, staticViewport.worldHeight)
-            shapeRenderer.end()
-        }
-
         if(!pauseOverlay.isPaused && !gameOverOverlay.isVisible) {
             vm.update(delta)
-            playerView.update()
+
+            if (vm.isJumpEvent()) {
+//                audio.playJump()
+            }
+
+            playerView.update(delta)
             gameCamera.position.y = vm.getCameraPosition()
             gameCamera.update()
         }
@@ -105,7 +92,7 @@ class GameScreen(
         background.render(game.batch, gameCamera.position.y)
 
         // draw platforms
-        drawPlatforms(game.batch, vm.getPlatformRects())
+        drawPlatforms(game.batch, vm.getPlatformRenderData())
 
         // draw players
         animator.update(delta)
@@ -146,27 +133,26 @@ class GameScreen(
 
     fun drawPlatforms(
         batch: SpriteBatch,
-        platforms: List<Rectangle>
+        platforms: List<PlatformRenderData>
     ) {
         val tileSize = Constants.PLATFORM_HEIGHT
 
         batch.begin()
 
         for(p in platforms) {
+            val theme = PlatformVisuals.getTheme(p.level)
+            val tex = PlatformVisuals.textures[theme]!!
 
-            val segments = kotlin.math.round(p.width / tileSize).toInt()
-            if(segments < 2) continue
-
-            val xStart = p.x
-            val y = p.y
+            val xStart = p.rect.x
+            val y = p.rect.y
 
             // left tile
-            batch.draw(leftTex, xStart, y, tileSize, tileSize)
+            batch.draw(tex.left, xStart, y, tileSize, tileSize)
 
             // middle tiles
-            for(i in 1 until segments - 1) {
+            for(i in 1 until p.segments - 1) {
                 batch.draw(
-                    midTex,
+                    tex.mid,
                     xStart + i * tileSize,
                     y,
                     tileSize,
@@ -176,8 +162,8 @@ class GameScreen(
 
             // right tile
             batch.draw(
-                rightTex,
-                xStart + (segments - 1) * tileSize,
+                tex.right,
+                xStart + (p.segments - 1) * tileSize,
                 y,
                 tileSize,
                 tileSize
@@ -206,6 +192,7 @@ class GameScreen(
         sideWalls.dispose()
         shapeRenderer.dispose()
         font.dispose()
+        audio.dispose()
 
         pauseOverlay.dispose()
         gameOverOverlay.dispose()

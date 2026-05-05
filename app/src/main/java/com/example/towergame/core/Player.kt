@@ -18,7 +18,7 @@ class Player(
     private val gravity = 1000f
     private val acceleration = 500f
     private val friction = 0.4f
-    private val maxSpeed = 300f
+    private val maxSpeed = 500f
     private val baseJump = 450f
     private var wallBounciness = 0.5f
     private var previousY = 0f
@@ -27,48 +27,79 @@ class Player(
     var platformRightEnd = Constants.WORLD_WIDTH
     var score = 0
 
-    var moveLeftState = false
-    var moveRightState = false
-
+//    var moveLeftState = false
+//    var moveRightState = false
+    var horizontalInputValue = 0f
     var jumpState = false
+    var jumpEvent = false
 
     fun setMove(move: Move, state: Boolean) {
-        when (move) {
-            Move.LEFT -> moveLeftState = state
-            Move.RIGHT -> moveRightState = state
-            Move.JUMP -> jumpState = state
-        }
+//        when (move) {
+//            Move.LEFT -> moveLeftState = state
+//            Move.RIGHT -> moveRightState = state
+//            Move.JUMP -> jumpState = state
+//        }
+    }
+
+    fun setHorizontalInput(input: Float) {
+        horizontalInputValue = input.coerceIn(-1f, 1f)
+    }
+
+    fun setJump(state: Boolean) {
+        jumpState = state
+    }
+
+    fun isJumpEvent(): Boolean {
+        return jumpEvent
     }
 
     fun getState(): State {
+//        if(isGrounded) {
+//            if(moveLeftState) return State.LEFT_GROUND
+//            if(moveRightState) return State.RIGHT_GROUND
+//            return State.IDLE
+//        }
+//        else {
+//            if(velocity.y > 0) return State.JUMP
+//            return State.FALL
+//        }
+
         if(isGrounded) {
-            if(moveLeftState) return State.LEFT_GROUND
-            if(moveRightState) return State.RIGHT_GROUND
-            return State.IDLE
-        }
-        else {
-            if(velocity.y > 0) return State.JUMP
-            return State.FALL
+            return when {
+                horizontalInputValue < -0.2f -> State.LEFT_GROUND
+                horizontalInputValue > 0.2f -> State.RIGHT_GROUND
+                else -> State.IDLE
+            }
+        } else {
+            return if (velocity.y > 0) State.JUMP else State.FALL
         }
     }
     fun update(delta: Float) {
         previousY = rect.y
         val currentAccel = if(isGrounded) acceleration else acceleration * 0.6f
 
-        if(moveLeftState) {
-            velocity.x -= currentAccel * delta
-        }
-        else if(moveRightState) {
-            velocity.x += currentAccel * delta
+//        if(moveLeftState) {
+//            velocity.x -= currentAccel * delta
+//        }
+//        else if(moveRightState) {
+//            velocity.x += currentAccel * delta
+//        }
+//        else {
+//            if(isGrounded) {
+//                velocity.x *= friction
+//            }
+//            else {
+//                // different value in the air
+//                velocity.x *= 0.98f
+//            }
+//        }
+
+
+        if(abs(horizontalInputValue) > 0.1f) {
+            velocity.x += horizontalInputValue * currentAccel * delta * 2
         }
         else {
-            if(isGrounded) {
-                velocity.x *= friction
-            }
-            else {
-                // different value in the air
-                velocity.x *= 0.98f
-            }
+            velocity.x *= if (isGrounded) friction else 0.98f
         }
 
         // speed cap
@@ -80,8 +111,15 @@ class Player(
             velocity.y -= gravity * delta
         }
 
+        // jump
         if(isGrounded && jumpState) {
-            jump()
+            val speedBonus = abs(velocity.x) * 0.7f // bonus for fast run
+            velocity.y = baseJump + speedBonus
+            isGrounded = false
+            jumpEvent = true
+        }
+        else {
+            jumpEvent = false
         }
 
         // applying velocity
@@ -108,12 +146,6 @@ class Player(
 
         // score
         score = maxOf(score, (rect.y / Constants.PLATFORM_GAP).toInt())
-    }
-
-    fun jump() {
-        val speedBonus = abs(velocity.x) * 0.7f // bonus for fast run
-        velocity.y = baseJump + speedBonus
-        isGrounded = false
     }
 
     fun resolveCollision(platformRect: Rectangle) {
